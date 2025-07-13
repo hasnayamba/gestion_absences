@@ -1,0 +1,34 @@
+{% extends "../dashboards/base_dashboard.html" %}
+{% block title %}Infos Collaborateurs{% endblock %}
+{% block content %}
+<h4>ℹ️ Liste des collaborateurs</h4>
+
+<table class="table table-striped mt-4">
+  <thead class="table-light">
+    <tr>
+      <th>Matricule</th>
+      <th>Nom</th>
+      <th>Email</th>
+      <th>Supérieur</th>
+      <th>Rôle</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in collaborateurs %}
+      <tr>
+        <td>{{ u.matricule }}</td>
+        <td>{{ u.first_name }} {{ u.last_name }}</td>
+        <td>{{ u.email }}</td>
+        <td>
+          {% if u.superieur %}
+            {{ u.superieur.first_name }} {{ u.superieur.last_name }}
+          {% else %}
+            <em>Non défini</em>
+          {% endif %}
+        </td>
+        <td>{{ u.get_role_display }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

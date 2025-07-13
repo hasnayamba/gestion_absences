@@ -1,0 +1,337 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Admin – AbsencesApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background-color: #f5f7fa;
+    }
+    .navbar {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-stat {
+      border-radius: 15px;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.05);
+    }
+    .dashboard-buttons .btn {
+      white-space: nowrap;
+      transition: all 0.3s ease-in-out;
+    }
+    .dashboard-buttons .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 700px;
+      margin: auto;
+    }
+    .config-panel {
+      overflow-x: auto;
+      padding-bottom: 1rem;
+    }
+    .badge.custom {
+      color: #fff;
+      padding: 5px;
+      font-size: 0.8rem;
+      display: inline-block;
+      border-radius: 4px;
+    }
+    table tbody tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+    .table-responsive {
+      overflow-x: auto;
+      min-width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast align-items-center text-bg-{{ message.tags }} border-0 show mb-2" role="alert">
+        <div class="d-flex">
+          <div class="toast-body">
+            {{ message }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand fs-4" href="#">📊 AbsencesApp</a>
+    <div class="d-flex ms-auto align-items-center">
+      <span class="text-white me-3"><i class="bi bi-person-circle"></i> Bonjour, <strong>{{ request.user.first_name }}</strong></span>
+      <a href="{% url 'logout' %}" class="btn btn-light btn-sm rounded-pill shadow-sm">
+        <i class="bi bi-box-arrow-right"></i> Déconnexion
+      </a>
+    </div>
+  </div>
+
+  <!-- Icône cloche avec compteur -->
+<div class="dropdown me-3">
+  <button class="btn btn-outline-light position-relative rounded-pill" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-bell-fill fs-5"></i>
+    {% if compteur_alertes > 0 %}
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ compteur_alertes }}
+        <span class="visually-hidden">absences en attente</span>
+      </span>
+    {% endif %}
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 300px;">
+    <li class="dropdown-header">Demandes en attente</li>
+    {% for a in absences_en_attente|slice:":5" %}
+      <li class="mb-1">
+        <a class="dropdown-item small" href="{% url 'valider_absence' a.id %}">
+          <strong>{{ a.utilisateur.first_name }}</strong> {{ a.type_absence.nom }} 
+        </a>
+      </li>
+    {% empty %}
+      <li><span class="dropdown-item text-muted small">Aucune demande en attente</span></li>
+    {% endfor %}
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item text-primary text-center" href="{% url 'liste_absences' %}">Voir tout</a></li>
+  </ul>
+</div>
+
+</nav>
+
+<!-- PANEL BOUTONS -->
+<div class="card p-4 mt-4">
+  <div class="row g-3 dashboard-buttons flex-nowrap config-panel">
+    <div class="col-auto"><a href="{% url 'creer_utilisateurs' %}" class="btn btn-outline-primary rounded-pill px-4"><i class="bi bi-person-plus-fill me-2"></i> Utilisateurs</a></div>
+    <div class="col-auto"><a href="{% url 'type_absence' %}" class="btn btn-outline-success rounded-pill px-4"><i class="bi bi-calendar2-plus-fill me-2"></i> Types d'absence</a></div>
+    <div class="col-auto"><a href="{% url 'jour_ferie' %}" class="btn btn-outline-warning rounded-pill px-4"><i class="bi bi-calendar-event-fill me-2"></i> Jours fériés</a></div>
+    <div class="col-auto"><a href="{% url 'annee_mois' %}" class="btn btn-outline-info rounded-pill px-4"><i class="bi bi-calendar3-range-fill me-2"></i> Années / Mois</a></div>
+    <div class="col-auto"><a href="{% url 'liste_superieurs' %}" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-people-fill me-2"></i> Supérieurs</a></div>
+    <div class="col-auto"><a href="{% url 'liste_absences' %}" class="btn btn-outline-dark rounded-pill px-4"><i class="bi bi-calendar-week me-2"></i> Absences collaborateurs</a></div>
+  </div>
+</div>
+
+<!-- ONGLET NAVIGATION -->
+<ul class="nav nav-tabs mt-5 container" id="adminTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="tableau-tab" data-bs-toggle="tab" data-bs-target="#tableau" type="button" role="tab">📆 Tableau annuel</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">📊 Statistiques</button>
+  </li>
+</ul>
+
+<div class="tab-content container mb-5" id="adminTabsContent">
+
+  <!-- ONGLET TABLEAU ANNUEL -->
+  <div class="tab-pane fade show active" id="tableau" role="tabpanel" aria-labelledby="tableau-tab">
+    <!-- Légende -->
+    <div class="mb-2 mt-3">
+      {% for type in type_absences %}
+        <span class="badge custom me-1" style="background-color: {{ type.couleur }}" title="{{ type.nom }}">{{ type.code }}</span>
+      {% endfor %}
+    </div>
+
+    <!-- Tableau annuel -->
+    <div class="table-responsive mt-3">
+      <table class="table table-bordered table-striped table-sm">
+        <caption>Tableau récapitulatif annuel des absences</caption>
+        <thead class="table-dark">
+          <tr>
+            <th>Matricule</th>
+            <th>Employé</th>
+            {% for mois in mois_liste.values %}
+              <th>{{ mois }}</th>
+            {% endfor %}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for data in utilisateurs_data %}
+            <tr>
+              <td><strong>{{ data.utilisateur.matricule }}</strong></td>
+              <td><strong>{{ data.utilisateur.first_name }} {{ data.utilisateur.last_name }}</strong></td>
+              {% for abs_list in data.absences_par_mois %}
+                <td>
+                  {% if abs_list %}
+                    {% for a in abs_list %}
+                      <div class="mb-1 small {{ a.statut_style }}">
+                        <span class="badge custom" style="background-color: {{ a.badge_color }}" title="{{ a.type_absence.nom }}">{{ a.type_absence.code }}</span><br>
+                        <span>{{ a.date_debut }} → {{ a.date_fin }}</span>
+                      </div>
+                    {% endfor %}
+                  {% else %}-{% endif %}
+                </td>
+              {% endfor %}
+              <td><strong>{{ data.total_jours_absence }} j</strong></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ONGLET STATS -->
+  <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+    <div class="card p-4 shadow-sm mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="text-primary"><i class="bi bi-graph-up-arrow"></i> Statistiques & Absences acceptées</h5>
+        <a href="{% url 'export_absences_excel' %}" class="btn btn-success btn-sm">
+          <i class="bi bi-file-earmark-excel-fill me-1"></i> Exporter en Excel
+        </a>
+      </div>
+
+      <!-- Graphique -->
+      <div class="chart-container mb-4">
+        <canvas id="absencesChart"></canvas>
+      </div>
+
+       <!-- Filtres -->
+    <div class="card mt-4 shadow-sm">
+      <div class="card-body">
+        <form method="get" class="row g-3 align-items-end" id="filtreForm">
+          <div class="col-md-3">
+            <label class="form-label">Recherche</label>
+            <input type="text" class="form-control" name="q" placeholder="Nom, Email, Matricule..." value="{{ request.GET.q }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Rôle</label>
+            <select class="form-select" name="role">
+              <option value="">Tous</option>
+              <option value="collaborateur" {% if request.GET.role == 'collaborateur' %}selected{% endif %}>Collaborateur</option>
+              <option value="drh" {% if request.GET.role == 'drh' %}selected{% endif %}>DRH</option>
+              <option value="directeur" {% if request.GET.role == 'directeur' %}selected{% endif %}>Directeur</option>
+              <option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Mois</label>
+            <select name="mois" class="form-select">
+              {% for m in mois_choices %}
+                <option value="{{ m }}" {% if mois_filtre == m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Année</label>
+            <select name="annee" class="form-select">
+              {% for y in annee_choices %}
+                <option value="{{ y }}" {% if annee_filtre == y %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+      <!-- Tableau stats -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <caption>Liste des collaborateurs avec leurs absences acceptées</caption>
+          <thead class="table-light">
+            <tr>
+              <th>Matricule</th>
+              <th>Nom</th>
+              <th>Email</th>
+              <th>Rôle</th>
+              <th>Supérieur</th>
+              <th>Absences acceptées</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in usf %}
+              <tr>
+                <td>{{ u.matricule }}</td>
+                <td>{{ u.first_name }} {{ u.last_name }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.get_role_display }}</td>
+                <td>{% if u.superieur %}{{ u.superieur.first_name }} {{ u.superieur.last_name }}{% else %}-{% endif %}</td>
+                <td>
+                  {% for a in u.absences_filtrees %}
+                    {% if a.statut == 'valide' %}
+                      <div class="small mb-1">
+                        <span class="badge bg-success">{{ a.type_absence.nom }}</span><br>
+                        {{ a.date_debut }} → {{ a.date_fin }}
+                      </div>
+                    {% endif %}
+                  {% empty %}<em>Aucune</em>{% endfor %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="text-center">Aucun utilisateur trouvé.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JS Bootstrap & Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script Chart.js -->
+<script>
+  const ctx = document.getElementById('absencesChart');
+  const moisLabels = {{ mois_labels|safe }};
+  const absencesData = {{ absences_data|safe }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: moisLabels,
+      datasets: [{
+        label: 'Absences',
+        data: absencesData,
+        backgroundColor: '#0d6efd',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const filtreForm = document.getElementById('filtreForm');
+    filtreForm.querySelectorAll('select').forEach(input => input.addEventListener('change', () => filtreForm.submit()));
+    let typingTimer;
+    const searchInput = filtreForm.querySelector('input[name="q"]');
+    searchInput.addEventListener('keyup', () => {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => filtreForm.submit(), 800);
+    });
+    searchInput.addEventListener('keydown', () => clearTimeout(typingTimer));
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+    toastElList.map(function (toastEl) {
+      new bootstrap.Toast(toastEl, { delay: 5000 }).show();
+    });
+  });
+</script>
+
+
+</body>
+</html>

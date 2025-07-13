@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Admin – AbsencesApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+</head>
+<body class="bg-light">
+
+<!-- 🔷 NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'dashboard' %}">AbsencesApp</a>
+    <div class="d-flex ms-auto align-items-center">
+      <span class="text-white me-3"><i class="bi bi-person-circle"></i> Admin : {{ request.user.first_name }}</span>
+      <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+    </div>
+  </div>
+</nav>
+<div class="container mt-5">
+    <h3 class="mb-4"><button class="btn btn-outline-secondary mb-3" onclick="history.back()">
+    ⬅️ Retour
+</button></h3>
+</div>
+<div class="container mt-5">
+    <h3 class="mb-4"><i class="bi bi-calendar-event"></i> Gestion des jours fériés</h3>
+
+    {% if messages %}
+    <div>
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ➕ Formulaire d'ajout -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Ajouter un jour férié</h5>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="ajouter" value="1">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" name="date" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nom</label>
+                        <input type="text" class="form-control" name="nom" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="description" required>
+                    </div>
+                </div>
+                <div class="mt-3 text-end">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📋 Liste des jours fériés -->
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <h5 class="card-title">Jours fériés enregistrés</h5>
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Nom</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for jf in jours %}
+                    <tr>
+                        <td>{{ jf.date }}</td>
+                        <td>{{ jf.nom }}</td>
+                        <td>{{ jf.description }}</td>
+                        <td>
+                            <!-- Modifier -->
+                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modifierModal{{ jf.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            <!-- Supprimer -->
+                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#supprimerModal{{ jf.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- 🛠️ Modale modification -->
+                    <div class="modal fade" id="modifierModal{{ jf.id }}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="modifier" value="1">
+                            <input type="hidden" name="jour_id" value="{{ jf.id }}">
+                            <div class="modal-header bg-warning text-white">
+                              <h5 class="modal-title">Modifier le jour férié</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="nouvelle_date" value="{{ jf.date }}" required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Nom</label>
+                                <input type="text" class="form-control" name="nouveau_nom" value="{{ jf.nom }}" required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <input type="text" class="form-control" name="nouvelle_description" value="{{ jf.description }}" required>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                              <button type="submit" class="btn btn-warning">Enregistrer</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 🗑️ Modale suppression -->
+                    <div class="modal fade" id="supprimerModal{{ jf.id }}" tabindex="-1">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="supprimer" value="1">
+                            <input type="hidden" name="jour_id" value="{{ jf.id }}">
+                            <div class="modal-header bg-danger text-white">
+                              <h5 class="modal-title">Confirmer la suppression</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              Supprimer le jour férié : <strong>{{ jf.nom }}</strong> du <strong>{{ jf.date }}</strong> ?
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                              <button type="submit" class="btn btn-danger">Supprimer</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center">Aucun jour férié enregistré.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

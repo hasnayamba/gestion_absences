@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Tableau de bord RH</h2>
+
+    <!-- 🔍 Filtres dynamiques -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <input type="date" name="date_debut" value="{{ request.GET.date_debut }}" class="form-control" placeholder="Date début">
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="date_fin" value="{{ request.GET.date_fin }}" class="form-control" placeholder="Date fin">
+        </div>
+        <div class="col-md-3">
+            <select name="type_absence" class="form-select">
+                <option value="">-- Type d'absence --</option>
+                {% for type in types_absence %}
+                <option value="{{ type.id }}" {% if request.GET.type_absence == type.id|stringformat:"s" %}selected{% endif %}>{{ type.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-primary w-100">Filtrer</button>
+        </div>
+    </form>
+
+    <!-- 📝 Liste des demandes en attente -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning">Demandes en attente</div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employé</th>
+                        <th>Type</th>
+                        <th>Début</th>
+                        <th>Fin</th>
+                        <th>Jours</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in demandes_en_attente %}
+                    <tr>
+                        <td>{{ a.utilisateur.first_name }} {{ a.utilisateur.last_name }}</td>
+                        <td>{{ a.type_absence.nom }}</td>
+                        <td>{{ a.date_debut }}</td>
+                        <td>{{ a.date_fin }}</td>
+                        <td>{{ a.nombre_jours }}</td>
+                        <td>
+                            <form method="post" class="d-flex gap-2 align-items-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="absence_id" value="{{ a.id }}">
+                                <input type="hidden" name="action" value="valider">
+                                <button class="btn btn-success btn-sm">Valider</button>
+                            </form>
+                            <form method="post" class="mt-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="absence_id" value="{{ a.id }}">
+                                <input type="hidden" name="action" value="refuser">
+                                <input type="text" name="commentaire_refus" class="form-control form-control-sm mb-1" placeholder="Motif refus...">
+                                <button class="btn btn-danger btn-sm">Refuser</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">Aucune demande en attente</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 📅 Calendrier annuel -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">Calendrier annuel des absences</div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- 👥 Liste des collaborateurs -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">Collaborateurs</div>
+        <div class="card-body table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Supérieur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in collaborateurs %}
+                    <tr>
+                        <td>{{ c.matricule }}</td>
+                        <td>{{ c.first_name }} {{ c.last_name }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.superieur.first_name }} {{ c.superieur.last_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            events: [
+                {% for a in absences_validees %}
+                {
+                    title: '{{ a.utilisateur.first_name }} - {{ a.type_absence.nom }}',
+                    start: '{{ a.date_debut|date:"Y-m-d" }}',
+                    end: '{{ a.date_fin|date:"Y-m-d" }}',
+                    color: '#0d6efd'
+                },
+                {% endfor %}
+            ]
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

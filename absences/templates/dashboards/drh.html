@@ -1,0 +1,235 @@
+{% extends 'dashboards/base_dashboard.html' %}
+
+{% block content %}
+{% load static %}
+
+<div class="container mt-5">
+    <h2 class="mb-4">Tableau de bord – DRH</h2>
+
+    <!-- Filtres -->
+    <form method="get" class="row g-2 mb-3">
+  <div class="col-md-3">
+    <select name="mois" class="form-select">
+      <option value="">-- Mois --</option>
+      {% for k, v in mois_liste.items %}
+        <option value="{{ k }}" {% if request.GET.mois == k %}selected{% endif %}>{{ v }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="type" class="form-select">
+      <option value="">-- Type d'absence --</option>
+      {% for type in type_absences %}
+        <option value="{{ type.id }}" {% if request.GET.type == type.id|stringformat:"s" %}selected{% endif %}>{{ type.nom }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="utilisateur" class="form-select">
+      <option value="">-- Collaborateur --</option>
+      {% for u in collaborateurs %}
+        <option value="{{ u.id }}" {% if request.GET.utilisateur == u.id|stringformat:"s" %}selected{% endif %}>{{ u.first_name }} {{ u.last_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <button class="btn btn-primary w-100">Filtrer</button>
+  </div>
+</form>
+
+
+    <!-- Export -->
+    <div class="text-end mb-3">
+        <a href="{% url 'export_absences_excel' %}?type={{ request.GET.type_absence }}&date_debut={{ request.GET.date_debut }}&date_fin={{ request.GET.date_fin }}" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel"></i> Export Excel
+        </a>
+    </div>
+
+    <!-- Demandes en attente -->
+    <div class="card mb-4 shadow">
+        <div class="card-header bg-warning text-dark">Demandes en attente</div>
+        <div class="card-body table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Collaborateur</th>
+                        <th>Matricule</th>
+                        <th>Type</th>
+                        <th>Du</th>
+                        <th>Au</th>
+                        <th>Jours</th>
+                        <th>Soumis le</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for demande in demandes_en_attente %}
+                    <tr>
+                        <td>{{ demande.utilisateur.first_name }} {{ demande.utilisateur.last_name }}</td>
+                        <td>{{ demande.utilisateur.matricule }}</td>
+                        <td>{{ demande.type_absence.nom }}</td>
+                        <td>{{ demande.date_debut }}</td>
+                        <td>{{ demande.date_fin }}</td>
+                        <td>{{ demande.nombre_jours }}</td>
+                        <td>{{ demande.date_soumission|date:"d/m/Y" }}</td>
+                        <td>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="valider">
+                                <input type="hidden" name="absence_id" value="{{ demande.id }}">
+                                <button type="submit" class="btn btn-success btn-sm">Valider</button>
+                            </form>
+                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalRefus{{ demande.id }}">Refuser</button>
+                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#infosModal{{ demande.id }}">
+                                Infos
+                            </button>
+                              <!-- Modal Infos Collaborateur -->
+                                <div class="modal fade" id="infosModal{{ demande.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                        <h5 class="modal-title">🧾 Détails – {{ demande.utilisateur.first_name }} {{ demande.utilisateur.last_name }}</h5>
+                                        <button class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                        <ul class="list-group">
+                                            <li class="list-group-item">Information sur le type d'absence :
+                                            <ul class="mt-2">
+                                                {% with nom=demande.type_absence.nom %}
+                                                {% with data=demande.utilisateur.get_absences_par_type.nom %}
+                                                    <li>
+                                                    <strong>{{ nom }}</strong> : {{ data.utilisés }} utilisé(s) / {{ data.quota }} autorisés —
+                                                    <span class="text-success">{{ data.restants }} restants</span>
+                                                    </li>
+                                                    {% for row in data %}
+                                                    <tr>
+                                                        <td>{{ row.utilisateur.matricule }}</td>
+                                                        <td>{{ row.utilisateur.first_name }} {{ row.utilisateur.last_name }}</td>
+                                                        {% for a in row.absences %}
+                                                        <td>
+                                                            <span class="badge" style="background-color: {{ a.couleur }}">
+                                                            {{ a.utilisé }} / {{ a.plafond }} j
+                                                            </span>
+                                                            {% if a.restant == 0 %}
+                                                            <i class="bi bi-exclamation-triangle-fill text-danger" title="Quota épuisé"></i>
+                                                            {% endif %}
+                                                        </td>
+                                                        {% endfor %}
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% endwith %}
+                                                {% endwith %}
+
+                                            </ul>
+                                            </li>
+                                        </ul>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            <!-- Modal Refus -->
+                            <div class="modal fade" id="modalRefus{{ demande.id }}" tabindex="-1" aria-labelledby="modalRefusLabel{{ demande.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="refuser">
+                                            <input type="hidden" name="absence_id" value="{{ demande.id }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalRefusLabel{{ demande.id }}">Refuser la demande</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <label>Motif du refus :</label>
+                                                <textarea name="commentaire_refus" class="form-control" required></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-danger">Refuser</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                        <div class="mb-4 d-flex justify-content-end gap-2">
+                            <a href="{% url 'quotas_absences' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-bar-chart-steps"></i> Quotas d’absences
+                            </a>
+                            <a href="{% url 'infos_collaborateurs' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-person-lines-fill"></i> Infos collaborateurs
+                            </a>
+                        </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center">Aucune demande en attente</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Calendrier des absences -->
+    <div class="card mb-4 shadow">
+        <div class="card-header bg-primary text-white">Calendrier annuel des absences validées</div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Liste des collaborateurs -->
+    <div class="card mb-4 shadow">
+        <div class="card-header bg-secondary text-white">Collaborateurs</div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Supérieur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collab in collaborateurs %}
+                    <tr>
+                        <td>{{ collab.matricule }}</td>
+                        <td>{{ collab.first_name }} {{ collab.last_name }}</td>
+                        <td>{{ collab.email }}</td>
+                        <td>{% if collab.superieur %}{{ collab.superieur.first_name }} {{ collab.superieur.last_name }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            height: 650,
+            events: [
+                {% for abs in absences_validees %}
+                {
+                    title: '{{ abs.utilisateur.first_name }} {{ abs.utilisateur.last_name }} ({{ abs.type_absence.nom }})',
+                    start: '{{ abs.date_debut|date:"Y-m-d" }}',
+                    end: '{{ abs.date_fin|date:"Y-m-d" }}',
+                    color: '#0d6efd'
+                },
+                {% endfor %}
+            ]
+        });
+        calendar.render();
+    });
+</script>
+
+
+{% endblock %}

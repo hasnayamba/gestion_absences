@@ -1,0 +1,64 @@
+# Environnement virtuel
+env/
+venv/
+.venv/
+ENV/
+.Python
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+static_root/
+static/
+
+# Fichier de config local (ex : .env contenant clés secrètes)
+.env
+.env.*
+
+# Migrations compilées (à garder si elles sont suivies, sinon ignorer uniquement les fichiers auto-générés)
+**/migrations/__pycache__/
+**/migrations/*.pyc
+**/migrations/*.pyo
+
+# PostgreSQL dump ou fichiers DB locaux
+*.sql
+
+# IDEs et outils
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Outils de tests & cache
+.coverage
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.pylint.d/
+.pytype/
+
+# Fichiers de paquet
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Systèmes
+.DS_Store
+Thumbs.db
+desktop.ini
+# Fichiers de configuration spécifiques

@@ -1,0 +1,35 @@
+{% extends "../dashboards/base_dashboard.html" %}
+{% block title %}Quotas Absences{% endblock %}
+{% block content %}
+<h4>📊 Quotas d’absences par collaborateur</h4>
+
+<table class="table table-bordered table-hover mt-4">
+  <thead class="table-dark">
+    <tr>
+      <th>Matricule</th>
+      <th>Nom</th>
+      {% for type in types %}
+        <th>{{ type.code }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in data %}
+      <tr>
+        <td>{{ row.utilisateur.matricule }}</td>
+        <td>{{ row.utilisateur.first_name }} {{ row.utilisateur.last_name }}</td>
+        {% for a in row.absences %}
+          <td>
+            <span class="badge" style="background-color: {{ a.couleur }}">
+              {{ a.utilisé }} / {{ a.plafond }} j
+            </span>
+            {% if a.restant == 0 %}
+              <i class="bi bi-exclamation-triangle-fill text-danger" title="Quota épuisé"></i>
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

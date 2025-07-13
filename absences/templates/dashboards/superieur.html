@@ -1,0 +1,135 @@
+{% extends 'dashboards/base_dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Titre -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="bi bi-people-fill"></i> Dashboard supérieur hiérarchique</h4>
+  </div>
+
+  <!-- Alertes Django (toasts) -->
+  <!-- Icône cloche avec compteur -->
+<div class="dropdown me-3">
+  <button class="btn btn-outline-light position-relative rounded-pill" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-bell-fill fs-5"></i>
+    {% if compteur_alertes > 0 %}
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ compteur_alertes }}
+        <span class="visually-hidden">absences en attente</span>
+      </span>
+    {% endif %}
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 300px;">
+    <li class="dropdown-header">Demandes en attente</li>
+    {% for a in absences_en_attente|slice:":5" %}
+      <li class="mb-1">
+        <a class="dropdown-item small" href="{% url 'valider_absence' a.id %}">
+          <strong>{{ a.utilisateur.first_name }}</strong> {{ a.type_absence.nom }} 
+        </a>
+      </li>
+    {% empty %}
+      <li><span class="dropdown-item text-muted small">Aucune demande en attente</span></li>
+    {% endfor %}
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item text-primary text-center" href="{% url 'liste_absences' %}">Voir tout</a></li>
+  </ul>
+</div>
+
+  <!-- Filtres -->
+  <form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-md-3">
+      <label class="form-label">Collaborateur</label>
+      <select name="collaborateur" class="form-select">
+        <option value="">Tous</option>
+        {% for c in collaborateurs %}
+          <option value="{{ c.id }}" {% if request.GET.collaborateur == c.id|stringformat:"s" %}selected{% endif %}>{{ c.first_name }} {{ c.last_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Mois</label>
+      <select name="mois" class="form-select">
+        {% for m in mois_choices %}
+          <option value="{{ m }}" {% if mois_filtre == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Année</label>
+      <select name="annee" class="form-select">
+        {% for a in annee_choices %}
+          <option value="{{ a }}" {% if annee_filtre == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Statut</label>
+      <select name="statut" class="form-select">
+        <option value="">Tous</option>
+        <option value="en_attente" {% if request.GET.statut == 'en_attente' %}selected{% endif %}>En attente</option>
+        <option value="valide" {% if request.GET.statut == 'valide' %}selected{% endif %}>Validée</option>
+        <option value="refuse" {% if request.GET.statut == 'refuse' %}selected{% endif %}>Refusée</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-grid">
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+    </div>
+  </form>
+
+  <!-- Tableau demandes d’absence -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between">
+      <span><i class="bi bi-calendar-week me-2"></i>Demandes d'absences</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Collaborateur</th>
+            <th>Type</th>
+            <th>Dates</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for absence in absences %}
+          <tr>
+            <td><strong>{{ absence.utilisateur.first_name }} {{ absence.utilisateur.last_name }}</strong></td>
+            <td><span class="badge bg-secondary">{{ absence.type_absence.nom }}</span></td>
+            <td>{{ absence.date_debut }} → {{ absence.date_fin }}</td>
+          
+            <td>
+              {% if absence.statut == 'valide' %}
+                <span class="badge bg-success">Validée</span>
+              {% elif absence.statut == 'refuse' %}
+                <span class="badge bg-danger">Refusée</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">En attente</span>
+              {% endif %}
+            </td>
+            <td>
+        {% if absence.statut == 'en_attente' %}
+            <a href="{% url 'approuver_par_superieur' absence.id %}" class="btn btn-sm btn-primary">
+            Approuver
+            </a>
+        {% else %}
+            <span class="text-muted small">Déjà approuvée</span>
+        {% endif %}
+        </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted">Aucune demande trouvée.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
