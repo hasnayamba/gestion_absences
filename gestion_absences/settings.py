@@ -72,6 +72,7 @@ WSGI_APPLICATION = 'gestion_absences.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+from urllib.parse import urlparse
 url = urlparse(connection_string)
 
 
