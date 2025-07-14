@@ -36,7 +36,7 @@ connection_string = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
 
 # Configuration de la base de données pour Azure PostgreSQL
 # Parsing de la chaîne de connexion
-url = urlparse(conn_str)
+url = urlparse(connection_string)
 
 DATABASES = {
     'default': {
