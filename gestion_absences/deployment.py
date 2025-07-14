@@ -32,14 +32,18 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 connection_string = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
-parameters = dict(pair.split('=') for pair in connection_string.split(' '))
+
+# Configuration de la base de données pour Azure PostgreSQL
+# Parsing de la chaîne de connexion
+url = urlparse(conn_str)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': parameters['dbname'],
-        'HOST': parameters['host'],
-        'USER': parameters['user'],
-        'PASSWORD': parameters['password'],
+        'NAME': url.path[1:],  # retire le slash initial
+        'USER': url.username,
+        'PASSWORD': url.password,
+        'HOST': url.hostname,
+        'PORT': url.port,
     }
 }
