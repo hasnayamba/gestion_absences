@@ -3,9 +3,11 @@ from .settings import *
 from .settings import BASE_DIR
 
 
-SECRET_KEY_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY_KEY:
-    raise RuntimeError("La variable d'environnement SECRET_KEY n'est pas définie.")
+SECRET_KEY = os.environ.get('SECRET')
+if not SECRET_KEY:
+    raise RuntimeError("La variable d'environnement SECRET n'est pas définie.")
+
+SECRET_KEY = SECRET_KEY
 
 ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']]
 CSRF_TRUSTED_ORIGINS = [f"https://{os.environ['WEBSITE_HOSTNAME']}"]
