@@ -43,7 +43,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         ('ca', 'Chef Antenne'),
         ('cp', 'Chef Projet'),
     ]
-    username = models.CharField(max_length=150, null=True, unique=True, verbose_name=_("Nom d'utilisateur"))
+    username = models.CharField(max_length=150, null=True, default='tempuser', unique=True, verbose_name=_("Nom d'utilisateur"))
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
