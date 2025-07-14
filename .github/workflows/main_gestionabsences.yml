@@ -10,6 +10,7 @@ env:
   SECRET: ${{ secrets.SECRET }}  # Injection globale de la variable SECRET
   WEBSITE_HOSTNAME: gestionabsences.azurewebsites.net
   AZURE_POSTGRESQL_CONNECTIONSTRING: ${{ secrets.AZURE_POSTGRESQL_CONNECTIONSTRING }}
+  DJANGO_SETTINGS_MODULE: gestion_absences.deployment
 
 
 jobs:

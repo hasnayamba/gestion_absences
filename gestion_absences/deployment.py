@@ -48,3 +48,4 @@ DATABASES = {
         'PORT': url.port,
     }
 }
+print("HOST utilisé pour PostgreSQL:", url.hostname)
