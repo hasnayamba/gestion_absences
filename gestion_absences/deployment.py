@@ -1,6 +1,7 @@
 import os
 from .settings import *
 from .settings import BASE_DIR
+from urllib.parse import urlparse
 
 # Récupération de la SECRET_KEY
 SECRET_KEY = os.environ.get('SECRET')
