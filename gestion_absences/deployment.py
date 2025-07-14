@@ -2,6 +2,7 @@ import os
 from .settings import *
 from .settings import BASE_DIR
 
+print("Variables d'environnement disponibles :", os.environ.keys())
 
 SECRET_KEY = os.environ.get('SECRET')
 if not SECRET_KEY:
