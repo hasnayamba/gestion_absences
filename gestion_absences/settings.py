@@ -73,6 +73,9 @@ WSGI_APPLICATION = 'gestion_absences.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 from urllib.parse import urlparse
+import os
+
+connection_string = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
 url = urlparse(connection_string)
 
 
