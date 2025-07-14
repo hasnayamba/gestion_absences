@@ -38,6 +38,7 @@ connection_string = os.environ['AZURE_POSTGRESQL_CONNECTIONSTRING']
 # Parsing de la chaîne de connexion
 url = urlparse(connection_string)
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -48,4 +49,5 @@ DATABASES = {
         'PORT': url.port,
     }
 }
+
 print("HOST utilisé pour PostgreSQL:", url.hostname)
