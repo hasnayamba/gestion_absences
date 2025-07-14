@@ -62,7 +62,7 @@ ROOT_URLCONF = 'gestion_absences.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'absences' / 'templates' / 'authentification'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
