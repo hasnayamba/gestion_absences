@@ -31,6 +31,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://gestionabsences-c5ahe4ccg0g7c3hg.switzerlandnorth-01.azurewebsites.net',
+]
 
 # Application definition
 
