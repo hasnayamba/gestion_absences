@@ -13,19 +13,21 @@ from django.db.models import Sum
 # GESTIONNAIRE UTILISATEUR
 # -------------------------
 class UtilisateurManager(BaseUserManager):
-    def create_user(self, email, password='1234', role='collaborateur', **extra_fields):
+    def create_user(self,username, email, password='1234', role='collaborateur', **extra_fields):
         if not email:
             raise ValueError("L'adresse email est obligatoire")
+        if not username:
+            raise ValueError("Le nom d'utilisateur est obligatoire")
         email = self.normalize_email(email)
         user = self.model(email=email, role=role, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password='admin', **extra_fields):
+    def create_superuser(self, username, email, password='admin', **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, password, role='admin', **extra_fields)
+        return self.create_user(username,email, password, role='admin', **extra_fields)
 
 # -------------------------
 # UTILISATEUR PERSONNALISÉ
@@ -39,7 +41,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         ('ca', 'Chef Antenne'),
         ('cp', 'Chef Projet'),
     ]
-
+    username = models.CharField(max_length=150, unique=True, verbose_name=_("Nom d'utilisateur"))
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -64,8 +66,8 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
 
     objects = UtilisateurManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
 
     def save(self, *args, **kwargs):
         if not self.matricule:
