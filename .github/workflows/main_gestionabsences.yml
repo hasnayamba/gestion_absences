@@ -29,7 +29,7 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
-          python manage.py collectstatic --noinput
+          python manage.py collectstatic --noinput --settings=gestion_absences.deployment  # Remplace "monprojet" par le vrai nom de ton dossier projet
 
       - name: Zip artifact for deployment
         run: |
@@ -58,6 +58,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'gestionabsences'  # Nom EXACT de ton app Azure
+          app-name: 'gestionabsences'  # Nom EXACT de ton App Service Azure
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_90446C04DFB14A9FAE8C46E950969FB7 }}
