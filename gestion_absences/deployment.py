@@ -1,17 +1,19 @@
-import os 
+import os
 from .settings import *
 from .settings import BASE_DIR
 
-print("Variables d'environnement disponibles :", os.environ.keys())
-
+# Récupération de la SECRET_KEY
 SECRET_KEY = os.environ.get('SECRET')
 if not SECRET_KEY:
     raise RuntimeError("La variable d'environnement SECRET n'est pas définie.")
 
-SECRET_KEY = SECRET_KEY
+# Récupération de l'hôte autorisé pour Azure (ou localhost par défaut)
+WEBSITE_HOSTNAME = os.environ.get('WEBSITE_HOSTNAME', 'localhost')
+ALLOWED_HOSTS = [WEBSITE_HOSTNAME]
 
-ALLOWED_HOSTS = [os.environ['WEBSITE_HOSTNAME']]
-CSRF_TRUSTED_ORIGINS = [f"https://{os.environ['WEBSITE_HOSTNAME']}"]
+# Protection CSRF (nécessaire en production avec Azure)
+CSRF_TRUSTED_ORIGINS = [f"https://{WEBSITE_HOSTNAME}"]
+
 DEBUG = False
 
 MIDDLEWARE = [
