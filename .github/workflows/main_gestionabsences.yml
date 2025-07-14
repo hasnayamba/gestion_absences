@@ -8,6 +8,9 @@ on:
 
 env:
   SECRET: ${{ secrets.SECRET }}  # Injection globale de la variable SECRET
+  WEBSITE_HOSTNAME: gestionabsences.azurewebsites.net
+  AZURE_POSTGRESQL_CONNECTIONSTRING: ${{ secrets.AZURE_POSTGRESQL_CONNECTIONSTRING }}
+
 
 jobs:
   build:
